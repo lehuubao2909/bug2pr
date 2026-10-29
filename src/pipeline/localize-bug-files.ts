@@ -2,12 +2,13 @@
  * Narrows the repository down to the few source files most likely to hold
  * the bug. Strings the failing test interacts with (button names,
  * placeholders, test ids, asserted text) are grepped in the source dirs;
- * files are ranked by how many distinct strings they contain, and Muse Spark
+ * files are ranked by how many distinct strings they contain, and the
+ * localize model (Meta API or open weights, see text-completion-providers)
  * picks the final shortlist from those hits.
  */
 import { execFileSync } from 'node:child_process';
 import { z } from 'zod';
-import { metaClient, models } from '../lib/meta-model-client.js';
+import { completeText } from '../lib/text-completion-providers.js';
 import type { ScopedLocator, SpecAction } from '../lib/spec-actions.js';
 import type { TargetApp } from '../targets/target-apps.js';
 import type { ExpectedAssertion } from './propose-expected-assertion.js';
@@ -52,13 +53,11 @@ export async function localizeBugFiles(app: TargetApp, repro: Repro, terms: stri
   if (ranked.length <= max) return ranked;
 
   const listing = ranked.map((f) => `### ${f}\n${hitLines(app, f, terms)}`).join('\n');
-  const response = (await metaClient().responses.create({
-    model: models.video,
-    input: [{ role: 'user', content: [{ type: 'input_text', text:
-      `Bug: expected "${repro.expected}", actual "${repro.actual}".\nUI strings involved: ${terms.join(' | ')}\n` +
-      `Candidate files with matching lines:\n${listing}\n\nReturn ONLY JSON {"files":["path", ...]} with at most ${max} files most likely to contain the faulty logic (prefer logic/components over pure markup or translations).` }] }],
-  } as never)) as unknown as { output_text: string };
-  const picked = z.object({ files: z.array(z.string()) }).parse(parseModelJson(response.output_text)).files;
+  const response = await completeText('localize', [
+    `Bug: expected "${repro.expected}", actual "${repro.actual}".\nUI strings involved: ${terms.join(' | ')}\n` +
+      `Candidate files with matching lines:\n${listing}\n\nReturn ONLY JSON {"files":["path", ...]} with at most ${max} files most likely to contain the faulty logic (prefer logic/components over pure markup or translations).`,
+  ]);
+  const picked = z.object({ files: z.array(z.string()) }).parse(parseModelJson(response.text)).files;
   const valid = picked.filter((f) => ranked.includes(f));
   return valid.length ? valid.slice(0, max) : ranked.slice(0, max);
 }

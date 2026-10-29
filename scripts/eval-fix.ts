@@ -17,6 +17,7 @@ import type { FailingTestResult } from '../src/pipeline/reproduce-bug-to-failing
 import type { Repro } from '../src/pipeline/repro-steps-schema.js';
 import { runRegressionChecks } from '../src/pipeline/run-regression-checks.js';
 import { targetApp, type TargetApp } from '../src/targets/target-apps.js';
+import { providerFor } from '../src/lib/text-completion-providers.js';
 import { runDir, writeJson } from '../src/lib/write-run-artifact.js';
 
 type Truth = { id: string; app: string; branch: string; fixFiles: string[]; upstream?: { fixCommit: string } };
@@ -44,7 +45,9 @@ async function groundTruthPasses(app: TargetApp, truth: Truth): Promise<boolean>
 async function main(): Promise<void> {
   const wanted = process.argv.slice(2);
   const ids = wanted.length ? wanted : (await readdir('eval/bugs')).sort();
-  const outDir = await runDir('eval-fix');
+  // Results per fix provider, so Meta API and open-weight runs can be compared.
+  const provider = providerFor('fix').provider;
+  const outDir = await runDir(`eval-fix-${provider}`);
   const rows = [];
   for (const id of ids) {
     const replay = JSON.parse(await readFile(`runs/eval-replay/${id}.json`, 'utf8')) as FailingTestResult;
@@ -66,7 +69,7 @@ async function main(): Promise<void> {
     const truthOk = fix.status === 'fixed' ? await groundTruthPasses(app, truth) : undefined;
     const touched = fix.attempts.at(-1)?.files ?? [];
     const pr = fix.status === 'fixed'
-      ? await prepareGatedPr(app, id, repro, fix, replay.specFile!, { failsBefore: `${replay.stability.length}/${replay.stability.length}`, replayTurns: replay.replay.turns, video: `eval/bugs/${id}/video.mp4` })
+      ? await prepareGatedPr(app, id, repro, fix, replay.specFile!, { failsBefore: `${replay.stability.length}/${replay.stability.length}`, replayTurns: replay.replay.turns, video: `eval/bugs/${id}/video.mp4` }, provider === 'meta' ? `bug2pr/${id}` : `bug2pr/${id}-${provider}`)
       : undefined;
     git(app.repoDir, 'checkout', '-q', truth.branch); // leave the app on the bug for further runs
     await settle();
@@ -80,6 +83,9 @@ async function main(): Promise<void> {
       groundTruthPasses: truthOk ?? '-',
       prBranch: pr?.status === 'awaiting-sign-off' ? `${pr.branch}@${pr.commit}` : pr?.reason ?? '-',
       fixSec: Math.round(fix.ms / 1000),
+      modelSec: Math.round(fix.modelMs / 1000),
+      model: fix.model,
+      changedLines: fix.diff ? fix.diff.split('\n').filter((l) => /^[+-][^+-]/.test(l)).length : 0,
       rootCause: fix.rootCause ?? fix.attempts.at(-1)?.problems.join(' | ').slice(0, 200),
     };
     rows.push(row);

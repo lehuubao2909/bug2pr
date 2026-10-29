@@ -1,6 +1,7 @@
 /**
  * Phase 5 fix loop. Each attempt starts from the clean buggy tree:
- * Muse Wonder proposes search/replace edits for the shortlisted files, we
+ * the fix model (Muse Wonder via Meta API, or open-weight Muse Spark Open via
+ * Baseten) proposes search/replace edits for the shortlisted files, we
  * apply them, let the dev server hot-reload, and the attempt only counts when
  * (1) the generated failing test now passes and (2) the target's own
  * regression checks stay green. Failures go back to the model as feedback.
@@ -8,7 +9,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { z } from 'zod';
-import { metaClient, models } from '../lib/meta-model-client.js';
+import { completeText, providerFor } from '../lib/text-completion-providers.js';
 import type { TargetApp } from '../targets/target-apps.js';
 import { parseModelJson, type Repro } from './repro-steps-schema.js';
 import { runRegressionChecks, type CheckResult } from './run-regression-checks.js';
@@ -25,7 +26,17 @@ const FixSchema = z.object({
 });
 
 export type FixAttempt = { rootCause: string; files: string[]; problems: string[]; spec?: SpecOutcome; checks: CheckResult[] };
-export type FixResult = { status: 'fixed' | 'escalated'; title?: string; rootCause?: string; diff?: string; attempts: FixAttempt[]; ms: number };
+export type FixResult = {
+  status: 'fixed' | 'escalated';
+  title?: string;
+  rootCause?: string;
+  diff?: string;
+  attempts: FixAttempt[];
+  ms: number;
+  modelMs: number; // time spent waiting for the model (excludes tests)
+  provider: string;
+  model: string;
+};
 
 const PROMPT = `You fix a bug in a web app repository. A Playwright regression test reproduces it and currently FAILS.
 Make the smallest correct change in the application source so the test passes, without breaking anything else.
@@ -45,25 +56,25 @@ export async function fixLoop(
   const started = performance.now();
   const testSource = await readFile(spec.file, 'utf8');
   const attempts: FixAttempt[] = [];
+  const { provider, model } = providerFor('fix');
+  let modelMs = 0;
 
   for (let i = 1; i <= MAX_ATTEMPTS; i++) {
     git(app.repoDir, 'checkout', '-q', '--', '.'); // every attempt starts from the buggy tree
     const context = await sourceContext(app.repoDir, files, terms);
     const history = attempts.map((a, n) => `Attempt ${n + 1} (${a.rootCause}) was rejected: ${a.problems.join(' | ')}`).join('\n');
-    const response = (await metaClient().responses.create({
-      model: models.fix,
-      input: [{ role: 'user', content: [
-        { type: 'input_text', text: PROMPT },
-        { type: 'input_text', text: `Bug report: expected "${repro.expected}", actual "${repro.actual}".` },
-        { type: 'input_text', text: `Failing test:\n${testSource}\nCurrent failure: ${spec.failure}` },
-        ...(history ? [{ type: 'input_text', text: history }] : []),
-        { type: 'input_text', text: `Source files:\n${context}` },
-      ] }],
-    } as never)) as unknown as { output_text: string };
+    const response = await completeText('fix', [
+      PROMPT,
+      `Bug report: expected "${repro.expected}", actual "${repro.actual}".`,
+      `Failing test:\n${testSource}\nCurrent failure: ${spec.failure}`,
+      ...(history ? [history] : []),
+      `Source files:\n${context}`,
+    ]);
+    modelMs += response.ms;
 
     let proposal: z.infer<typeof FixSchema>;
     try {
-      proposal = FixSchema.parse(parseModelJson(response.output_text));
+      proposal = FixSchema.parse(parseModelJson(response.text));
     } catch (err) {
       attempts.push({ rootCause: '(unparseable)', files: [], problems: [`invalid JSON: ${String(err).slice(0, 200)}`], checks: [] });
       continue;
@@ -86,10 +97,10 @@ export async function fixLoop(
       attempt.problems.push(`existing check failed: ${broken.command}\n${broken.tail.slice(-800)}`);
       continue;
     }
-    return { status: 'fixed', title: proposal.title, rootCause: proposal.rootCause, diff: git(app.repoDir, 'diff'), attempts, ms: Math.round(performance.now() - started) };
+    return { status: 'fixed', title: proposal.title, rootCause: proposal.rootCause, diff: git(app.repoDir, 'diff'), attempts, ms: Math.round(performance.now() - started), modelMs, provider, model };
   }
 
   git(app.repoDir, 'checkout', '-q', '--', '.');
   await settle();
-  return { status: 'escalated', attempts, ms: Math.round(performance.now() - started) };
+  return { status: 'escalated', attempts, ms: Math.round(performance.now() - started), modelMs, provider, model };
 }
