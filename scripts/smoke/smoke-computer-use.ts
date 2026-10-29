@@ -13,6 +13,7 @@ import { chromium } from 'playwright';
 import { metaClient, models } from '../../src/lib/meta-model-client.js';
 import { executeAction, screenshotDataUrl, type ComputerAction } from '../../src/lib/execute-computer-actions.js';
 import { runDir, writeJson } from '../../src/lib/write-run-artifact.js';
+import { canAcknowledge, type SafetyCheck } from '../../src/lib/computer-use-safety-policy.js';
 
 const MAX_STEPS = 15;
 const APP = pathToFileURL(path.resolve('fixtures/buggy-todo-app/index.html')).href;
@@ -28,17 +29,6 @@ type ComputerCall = {
   actions: ComputerAction[];
   pending_safety_checks?: SafetyCheck[];
 };
-type SafetyCheck = { id: string; code: string; message: string };
-
-// Harness policy: the generic per-action confirmation is accepted only while the
-// browser is on our own sandboxed fixture (file:// or localhost). Any other
-// check code, or any other origin, stops the run for a human to review.
-const ACKABLE_CODES = new Set(['computer_action_requires_confirmation']);
-function canAcknowledge(checks: SafetyCheck[], url: string): boolean {
-  const sandboxed = url.startsWith('file://') || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(url);
-  return checks.every((c) => sandboxed && ACKABLE_CODES.has(c.code));
-}
-
 type ResponseLike = { id: string; output: { type: string }[]; output_text?: string; usage?: unknown; status?: string };
 
 async function main(): Promise<void> {

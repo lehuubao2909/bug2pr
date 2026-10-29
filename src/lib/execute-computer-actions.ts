@@ -18,10 +18,14 @@ export type ComputerAction =
 
 // Model key names -> Playwright key names (anything else is passed through).
 const KEY_MAP: Record<string, string> = {
-  CTRL: 'Control', CONTROL: 'Control', CMD: 'Meta', META: 'Meta', ALT: 'Alt', SHIFT: 'Shift',
+  // Ctrl is mapped to ControlOrMeta so Ctrl+A/C/V shortcuts also work in Chromium on macOS.
+  CTRL: 'ControlOrMeta', CONTROL: 'ControlOrMeta', CMD: 'Meta', META: 'Meta', ALT: 'Alt', SHIFT: 'Shift',
   ENTER: 'Enter', RETURN: 'Enter', ESC: 'Escape', ESCAPE: 'Escape', TAB: 'Tab', SPACE: 'Space',
   BACKSPACE: 'Backspace', DELETE: 'Delete', UP: 'ArrowUp', DOWN: 'ArrowDown', LEFT: 'ArrowLeft', RIGHT: 'ArrowRight',
 };
+
+/** ['CTRL', 'a'] -> 'ControlOrMeta+a', used for both execution and recorded specs. */
+export const toPlaywrightKey = (keys: string[]): string => keys.map((k) => KEY_MAP[k.toUpperCase()] ?? k).join('+');
 
 const mouseButton = (b?: string): 'left' | 'right' | 'middle' =>
   b === 'right' ? 'right' : b === 'wheel' ? 'middle' : 'left';
@@ -43,7 +47,7 @@ export async function executeAction(page: Page, action: ComputerAction): Promise
       return page.mouse.up();
     }
     case 'keypress':
-      return page.keyboard.press(action.keys.map((k) => KEY_MAP[k.toUpperCase()] ?? k).join('+'));
+      return page.keyboard.press(toPlaywrightKey(action.keys));
     case 'move':
       return page.mouse.move(action.x, action.y);
     case 'scroll':
