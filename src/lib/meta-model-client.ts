@@ -12,6 +12,8 @@ export const models = {
   video: process.env.META_VIDEO_MODEL || 'muse-spark-1.3',
   computerUse: process.env.META_COMPUTER_USE_MODEL || 'muse-spark-1.3',
   sam: process.env.META_SAM_MODEL || 'sam-3.1',
+  // Code reasoning for the fix loop uses Meta's frontier model.
+  fix: process.env.META_FIX_MODEL || 'muse-wonder-1.0',
 } as const;
 
 let cached: OpenAI | undefined;
