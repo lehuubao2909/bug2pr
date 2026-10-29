@@ -1,0 +1,15 @@
+{
+  "id": "shadcn-filter-multiselect",
+  "app": "shadcn-admin",
+  "branch": "bug/filter-multiselect-replaces",
+  "url": "http://localhost:5173/tasks",
+  "kind": "seeded",
+  "steps": [
+    { "action": "click", "target": "Status" },
+    { "action": "click", "target": "Todo" },
+    { "action": "click", "target": "In Progress" }
+  ],
+  "expected": "Both Todo and In Progress stay selected and the table shows tasks with either status.",
+  "actual": "Selecting In Progress unselects Todo; only In Progress is checked and only In Progress tasks are shown.",
+  "fixFiles": ["src/components/data-table/faceted-filter.tsx"]
+}

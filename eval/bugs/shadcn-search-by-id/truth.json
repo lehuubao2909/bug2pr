@@ -1,0 +1,14 @@
+{
+  "id": "shadcn-search-by-id",
+  "app": "shadcn-admin",
+  "branch": "bug/search-by-id-ignored",
+  "url": "http://localhost:5173/tasks",
+  "kind": "seeded",
+  "steps": [
+    { "action": "click", "target": "Filter by title or ID..." },
+    { "action": "type", "target": "Filter by title or ID...", "value": "TASK-7141" }
+  ],
+  "expected": "The table shows the row for TASK-7141 (search placeholder says it filters by title or ID).",
+  "actual": "The table shows 'No results.'",
+  "fixFiles": ["src/features/tasks/components/tasks-table.tsx"]
+}

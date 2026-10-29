@@ -1,0 +1,13 @@
+{
+  "id": "shadcn-last-page",
+  "app": "shadcn-admin",
+  "branch": "bug/last-page-off-by-one",
+  "url": "http://localhost:5173/tasks",
+  "kind": "seeded",
+  "steps": [
+    { "action": "click", "target": "Go to last page" }
+  ],
+  "expected": "The pagination label reads 'Page 10 of 10'.",
+  "actual": "The pagination label reads 'Page 9 of 10' and the next-page button is still enabled.",
+  "fixFiles": ["src/components/data-table/pagination.tsx"]
+}

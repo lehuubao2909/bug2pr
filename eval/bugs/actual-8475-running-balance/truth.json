@@ -1,0 +1,23 @@
+{
+  "id": "actual-8475-running-balance",
+  "app": "actual",
+  "branch": "bug/8475-running-balance",
+  "url": "http://localhost:3002/",
+  "kind": "real",
+  "upstream": {
+    "issue": "https://github.com/actualbudget/actual/issues/8475",
+    "fixPr": "https://github.com/actualbudget/actual/pull/8490",
+    "fixCommit": "2948fd174e7a6ecca559f80437f437c6eec83561"
+  },
+  "setup": "Create test file, open the Bank of America account (not part of the bug report video).",
+  "steps": [
+    { "action": "click", "target": "Account menu" },
+    { "action": "click", "target": "Show running balance" },
+    { "action": "click", "target": "Payment cell of the first Movies transaction" },
+    { "action": "type", "target": "Payment", "value": "50.00" },
+    { "action": "keypress", "target": "Tab" }
+  ],
+  "expected": "After changing the payment, the Balance column for that row and the rows above it updates by the difference.",
+  "actual": "The payment shows the new amount but the running Balance column keeps the old values until the page is reloaded.",
+  "fixFiles": ["packages/desktop-client/src/components/accounts/Account.tsx"]
+}
