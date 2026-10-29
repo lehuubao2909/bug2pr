@@ -87,12 +87,16 @@ export async function reproduceBugToFailingTest(
   app: TargetApp,
   repro: Repro,
   interactions: Interaction[],
+  hooks: {
+    onTurn?: (turn: number, screenshot: Buffer, actions: SpecAction[], note: string) => void;
+    onAttempt?: (attempt: { assertion: ExpectedAssertion; outcome: SpecOutcome }, specSource: string) => void;
+  } = {},
 ): Promise<FailingTestResult> {
   const outDir = path.resolve('runs/replay', id);
   await mkdir(outDir, { recursive: true });
   const specFile = path.join(outDir, 'repro.spec.ts');
 
-  const replay = await replayWithComputerUse(app, repro, interactions, { outDir });
+  const replay = await replayWithComputerUse(app, repro, interactions, { outDir, onTurn: hooks.onTurn });
   const summary = { reproduced: replay.reproduced, turns: replay.turns, stopReason: replay.stopReason, ms: replay.ms, report: replay.report };
   const base = { actions: replay.actions, replay: summary, attempts: [] as FailingTestResult['attempts'], stability: [] as SpecOutcome[] };
   if (!replay.reproduced) {
@@ -108,6 +112,7 @@ export async function reproduceBugToFailingTest(
       await writeFile(specFile, spec.source);
       const outcome = await runReproSpec(specFile, REPRO_CONFIG, spec.assertLines[0]);
       base.attempts.push({ assertion, outcome });
+      hooks.onAttempt?.({ assertion, outcome }, spec.source);
 
       if (capturesBug(outcome, assertion) && !(await sensitiveToSteps(app, id, repro, assertion, specFile, outcome))) {
         feedback.push(`"${assertion.description}" fails identically even without the repro steps, so its locator points at an element the steps never change (likely a different element with the same name); target the element the bug affects`);

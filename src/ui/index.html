@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bug2PR</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --line: #30363d; --text: #e6edf3; --muted: #8b949e;
+    --blue: #4c8dff; --green: #3fb950; --red: #f85149; --amber: #d29922; --violet: #a371f7;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, sans-serif; }
+  header { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: .2px; }
+  header h1 span { color: var(--blue); }
+  header .tag { color: var(--muted); }
+  .controls { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  select, button { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font: inherit; }
+  button.primary { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  label.toggle { display: flex; gap: 6px; align-items: center; color: var(--muted); cursor: pointer; }
+  .drop { border: 1px dashed var(--line); border-radius: 8px; padding: 6px 10px; color: var(--muted); }
+  .drop.over { border-color: var(--blue); color: var(--text); }
+  .stages { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 12px 20px; }
+  .stage { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 64px; }
+  .stage b { display: block; }
+  .stage small { color: var(--muted); display: block; margin-top: 2px; }
+  .stage.running { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue) inset; }
+  .stage.done { border-color: var(--green); }
+  .stage.failed { border-color: var(--red); }
+  .stage.escalated { border-color: var(--amber); }
+  main { display: grid; grid-template-columns: 1fr 1.25fr 1.15fr; gap: 12px; padding: 0 20px 20px; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; min-width: 0; }
+  section h2 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
+  video, .shot { width: 100%; border-radius: 8px; border: 1px solid var(--line); background: #000; display: block; }
+  .shot { aspect-ratio: 1280 / 900; object-fit: contain; }
+  ol, ul { margin: 6px 0; padding-left: 20px; }
+  li { margin: 3px 0; }
+  .t { color: var(--blue); cursor: pointer; font-variant-numeric: tabular-nums; }
+  .chip { display: inline-block; border-radius: 999px; padding: 1px 8px; font-size: 12px; border: 1px solid var(--line); color: var(--muted); }
+  .chip.ok { color: var(--green); border-color: var(--green); }
+  .chip.bad { color: var(--red); border-color: var(--red); }
+  .chip.warn { color: var(--amber); border-color: var(--amber); }
+  .chip.model { color: var(--violet); border-color: var(--violet); }
+  pre { margin: 6px 0; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow: auto; max-height: 300px; font: 12px/1.45 ui-monospace, Menlo, monospace; white-space: pre; }
+  .add { color: var(--green); } .del { color: var(--red); }
+  .muted { color: var(--muted); }
+  .log { max-height: 160px; overflow: auto; font-size: 12.5px; }
+  .kv { display: grid; grid-template-columns: 80px 1fr; gap: 2px 8px; margin: 6px 0; }
+  .kv span:nth-child(odd) { color: var(--muted); }
+  .done-banner { margin: 0 20px 12px; padding: 10px 14px; border-radius: 10px; display: none; font-weight: 600; }
+  @media (max-width: 1100px) { main { grid-template-columns: 1fr; } .stages { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Bug<span>2</span>PR</h1>
+  <div class="tag">Screen recording of a bug &rarr; reproduced failing test &rarr; verified pull request</div>
+  <div class="controls">
+    <select id="bug"></select>
+    <div class="drop" id="drop">or drop an .mp4</div>
+    <select id="app"><option value="shadcn-admin">shadcn-admin</option><option value="actual">Actual Budget</option></select>
+    <label class="toggle" title="Localization and fixing run on Meta open weights (Muse Spark Open via Baseten): source code never goes to a closed API">
+      <input type="checkbox" id="private" /> Private mode (open weights)
+    </label>
+    <button class="primary" id="run">Run Bug2PR</button>
+  </div>
+</header>
+
+<div class="stages" id="stages"></div>
+<div class="done-banner" id="banner"></div>
+
+<main>
+  <section>
+    <h2>1 · Bug report video</h2>
+    <video id="video" controls muted></video>
+    <h2 style="margin-top:12px">SAM 3.1 cursor interactions</h2>
+    <div id="interactions" class="muted">–</div>
+    <h2 style="margin-top:12px">Repro steps · Muse Spark</h2>
+    <div id="steps" class="muted">–</div>
+  </section>
+
+  <section>
+    <h2>2 · Agent browser · computer use <span id="turn" class="chip">idle</span></h2>
+    <img id="shot" class="shot" alt="" />
+    <h2 style="margin-top:12px">Recorded actions (become the test)</h2>
+    <ol id="actions" class="log"></ol>
+  </section>
+
+  <section>
+    <h2>3 · Failing test &amp; gate</h2>
+    <div id="gate" class="muted">–</div>
+    <pre id="spec" class="muted">// generated test appears here</pre>
+    <h2 style="margin-top:12px">4 · Fix <span id="model" class="chip model" hidden></span></h2>
+    <div id="fix" class="muted">–</div>
+    <pre id="diff" hidden></pre>
+    <h2 style="margin-top:12px">5 · Pull request (awaiting sign-off)</h2>
+    <div id="pr" class="muted">–</div>
+  </section>
+</main>
+
+<script>
+const STAGES = [
+  ['understand', 'Understand video', 'SAM 3.1 + Muse Spark'],
+  ['replay', 'Reproduce live', 'computer use'],
+  ['test', 'Failing test', 'verification gate'],
+  ['fix', 'Fix', 'repo tests must stay green'],
+  ['pr', 'Pull request', 'human sign-off'],
+];
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const seconds = (t) => { const [m, s] = t.split(':'); return Number(m) * 60 + Number(s); };
+let selectedVideo = '';
+
+function resetView() {
+  $('stages').innerHTML = STAGES.map(([id, name, sub]) => `<div class="stage" id="st-${id}"><b>${name}</b><small>${sub}</small></div>`).join('');
+  for (const id of ['interactions', 'steps', 'gate', 'fix', 'pr']) { $(id).className = 'muted'; $(id).textContent = '–'; }
+  $('actions').innerHTML = ''; $('shot').removeAttribute('src'); $('turn').textContent = 'idle';
+  $('spec').textContent = '// generated test appears here'; $('diff').hidden = true; $('model').hidden = true; $('banner').style.display = 'none';
+}
+
+function loadVideo(path) {
+  selectedVideo = path;
+  $('video').src = `/media?path=${encodeURIComponent(path)}#t=0.5`; // show a real frame, not black
+}
+
+async function loadBugs() {
+  const bugs = await (await fetch('/api/bugs')).json();
+  $('bug').innerHTML = bugs.map((b) => `<option value="${esc(b.video)}" data-app="${esc(b.app)}">${esc(b.id)}</option>`).join('');
+  const pick = () => { const o = $('bug').selectedOptions[0]; if (o) { $('app').value = o.dataset.app; loadVideo(o.value); } };
+  $('bug').onchange = pick; pick();
+}
+
+const drop = $('drop');
+drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('over'); };
+drop.ondragleave = () => drop.classList.remove('over');
+drop.ondrop = async (e) => {
+  e.preventDefault(); drop.classList.remove('over');
+  const file = e.dataTransfer.files[0];
+  if (!file || !file.name.endsWith('.mp4')) return alert('Please drop an .mp4 file');
+  drop.textContent = `uploading ${file.name}…`;
+  const r = await (await fetch(`/api/upload?name=${encodeURIComponent(file.name)}`, { method: 'PUT', body: file })).json();
+  drop.textContent = file.name; loadVideo(r.video);
+};
+
+$('run').onclick = async () => {
+  resetView();
+  $('run').disabled = true;
+  const r = await fetch('/api/run', { method: 'POST', body: JSON.stringify({ video: selectedVideo, app: $('app').value, privateMode: $('private').checked }) });
+  if (!r.ok) { alert((await r.json()).error); $('run').disabled = false; }
+};
+
+function render(e) {
+  switch (e.type) {
+    case 'stage': {
+      const el = $(`st-${e.stage}`); if (!el) break;
+      el.className = `stage ${e.status}`;
+      el.querySelector('small').textContent = e.detail ?? el.querySelector('small').textContent;
+      if (e.stage === 'fix' && e.status === 'running' && e.detail) { $('model').hidden = false; $('model').textContent = e.detail; }
+      break;
+    }
+    case 'interactions':
+      $('interactions').className = '';
+      $('interactions').innerHTML = e.items.length
+        ? e.items.map((i, n) => `<span class="chip">#${n} <span class="t" data-t="${i.start}">${i.start}</span> @ ${i.x},${i.y}</span>`).join(' ')
+        : '<span class="muted">no cursor interactions detected</span>';
+      break;
+    case 'steps':
+      $('steps').className = '';
+      $('steps').innerHTML = `<ol>${e.repro.steps.map((s) => `<li><span class="t" data-t="${esc(s.t)}">${esc(s.t)}</span> ${esc(s.action)} <b>${esc(s.target)}</b>${s.value ? ` → <code>${esc(s.value)}</code>` : ''}</li>`).join('')}</ol>
+        <div class="kv"><span>Expected</span><span>${esc(e.repro.expected)}</span><span>Actual</span><span>${esc(e.repro.actual)}</span></div>`;
+      break;
+    case 'turn':
+      $('shot').src = e.screenshot; $('turn').textContent = `turn ${e.turn} · ${e.note}`;
+      for (const a of e.actions) $('actions').insertAdjacentHTML('beforeend', `<li><code>${esc(describe(a))}</code></li>`);
+      $('actions').scrollTop = 1e9;
+      break;
+    case 'gate': {
+      $('gate').className = '';
+      // A good regression test FAILS on the buggy app at the expected-behaviour assertion.
+      const label = { 'failed-at-assertion': 'fails on buggy app ✓', passed: 'passes on buggy app ✗', 'failed-before-assertion': 'broke before assertion ✗', error: 'error ✗' }[e.status] ?? e.status;
+      $('gate').insertAdjacentHTML('beforeend', `<div>Attempt ${e.attempt}: ${esc(e.description)} <span class="chip ${e.status === 'failed-at-assertion' ? 'ok' : 'bad'}">${esc(label)}</span></div>`);
+      $('spec').className = ''; $('spec').textContent = e.spec;
+      break;
+    }
+    case 'fixAttempt':
+      if ($('fix').classList.contains('muted')) { $('fix').className = ''; $('fix').innerHTML = ''; }
+      $('fix').insertAdjacentHTML('beforeend', `<div>Attempt ${e.n} <span class="chip ${e.problems.length ? 'bad' : 'ok'}">${e.problems.length ? 'rejected' : 'accepted'}</span>
+        <div class="muted">${esc(e.rootCause)}</div>${e.problems.length ? `<div class="muted">${esc(e.problems[0].slice(0, 220))}</div>` : ''}</div>`);
+      break;
+    case 'diff':
+      $('diff').hidden = false;
+      $('diff').innerHTML = e.diff.split('\n').map((l) => `<span class="${/^\+(?!\+)/.test(l) ? 'add' : /^-(?!-)/.test(l) ? 'del' : ''}">${esc(l)}</span>`).join('\n');
+      break;
+    case 'pr':
+      $('pr').className = '';
+      $('pr').innerHTML = e.branch
+        ? `<div><b>${esc(e.title)}</b></div><div class="muted">branch <code>${esc(e.branch)}</code> @ ${esc(e.commit)} · ${esc(e.reason)}</div><pre>${esc(e.body)}</pre>`
+        : `<span class="chip warn">escalated</span> ${esc(e.reason)}`;
+      break;
+    case 'log':
+      console.log(e.message);
+      if (e.message.startsWith('Error')) { $('banner').style.display = 'block'; $('banner').style.background = '#3d1214'; $('banner').textContent = e.message; }
+      break;
+    case 'done': {
+      $('run').disabled = false;
+      const ok = e.status === 'pr-ready';
+      const b = $('banner'); b.style.display = 'block';
+      b.style.background = ok ? '#12361c' : e.status === 'escalated' ? '#3b2e0c' : '#3d1214';
+      b.textContent = ok ? `✅ Verified fix ready for review in ${e.seconds}s` : e.status === 'escalated' ? `⚠️ Escalated to a human after ${e.seconds}s: the agent could not verify its work` : `❌ Run failed after ${e.seconds}s`;
+      break;
+    }
+  }
+}
+
+function describe(a) {
+  if (a.kind === 'click') { const l = a.locator; return `click ${l.by === 'role' ? `${l.role} "${l.name}"` : `${l.by} "${l.value}"`}${l.within?.hasText ? ` in row "${l.within.hasText}"` : ''}`; }
+  if (a.kind === 'type') return `type "${a.text}"`;
+  if (a.kind === 'press') return `press ${a.key}`;
+  return a.kind;
+}
+
+document.addEventListener('click', (e) => { const t = e.target.closest('[data-t]'); if (t) { $('video').currentTime = seconds(t.dataset.t); $('video').play(); } });
+resetView();
+loadBugs();
+new EventSource('/api/events').onmessage = (m) => render(JSON.parse(m.data));
+</script>
+</body>
+</html>

@@ -66,7 +66,7 @@ export async function replayWithComputerUse(
   app: TargetApp,
   repro: Repro,
   interactions: Interaction[],
-  opts: { outDir: string; maxTurns?: number },
+  opts: { outDir: string; maxTurns?: number; onTurn?: (turn: number, screenshot: Buffer, actions: SpecAction[], note: string) => void },
 ): Promise<ReplayResult> {
   const maxTurns = opts.maxTurns ?? 25;
   const started = performance.now();
@@ -94,6 +94,7 @@ export async function replayWithComputerUse(
       stopReason = `safety check needs a person: ${checks.map((c) => c.code).join(', ')}`;
       break;
     }
+    const turnActions: SpecAction[] = [];
     for (const action of call.actions) {
       const recorded = await recordAction(page, action);
       await executeAction(page, action);
@@ -102,10 +103,15 @@ export async function replayWithComputerUse(
         const focused = await locatorOfFocused(page);
         if (focused && ['textbox', 'combobox'].includes((focused as { role?: string }).role ?? '')) recorded.locator = focused;
       }
-      if (recorded) actions.push(recorded);
+      if (recorded) {
+        actions.push(recorded);
+        turnActions.push(recorded);
+      }
     }
     await page.waitForTimeout(300);
-    await writeFile(path.join(opts.outDir, `replay-${String(turns + 1).padStart(2, '0')}.png`), await page.screenshot());
+    const shot = await page.screenshot();
+    await writeFile(path.join(opts.outDir, `replay-${String(turns + 1).padStart(2, '0')}.png`), shot);
+    opts.onTurn?.(turns + 1, shot, turnActions, call.actions.map((a) => a.type).join(', '));
     response = await create({
       previous_response_id: response.id,
       input: [{ type: 'computer_call_output', call_id: call.call_id, acknowledged_safety_checks: checks, output: { type: 'computer_screenshot', image_url: await screenshotDataUrl(page) } }],

@@ -52,6 +52,7 @@ export async function fixLoop(
   spec: { file: string; assertLine: number; config: string; failure: string },
   files: string[],
   terms: string[],
+  onAttempt?: (attempt: FixAttempt, n: number) => void,
 ): Promise<FixResult> {
   const started = performance.now();
   const testSource = await readFile(spec.file, 'utf8');
@@ -83,20 +84,26 @@ export async function fixLoop(
     attempts.push(attempt);
 
     attempt.problems = await applyEdits(app.repoDir, files, proposal.edits);
-    if (attempt.problems.length) continue;
+    if (attempt.problems.length) {
+      onAttempt?.(attempt, i);
+      continue;
+    }
 
     await settle();
     attempt.spec = await runReproSpec(spec.file, spec.config, spec.assertLine);
     if (attempt.spec.status !== 'passed') {
       attempt.problems.push(`regression test still fails (${attempt.spec.status}): ${attempt.spec.message}`);
+      onAttempt?.(attempt, i);
       continue;
     }
     attempt.checks = await runRegressionChecks(app.regression);
     const broken = attempt.checks.find((c) => !c.ok);
     if (broken) {
       attempt.problems.push(`existing check failed: ${broken.command}\n${broken.tail.slice(-800)}`);
+      onAttempt?.(attempt, i);
       continue;
     }
+    onAttempt?.(attempt, i);
     return { status: 'fixed', title: proposal.title, rootCause: proposal.rootCause, diff: git(app.repoDir, 'diff'), attempts, ms: Math.round(performance.now() - started), modelMs, provider, model };
   }
 
