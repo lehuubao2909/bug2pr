@@ -1,0 +1,78 @@
+<!doctype html>
+<!--
+  Tiny fixture app with ONE seeded bug, used only for smoke tests:
+  ticking a todo as done does not update the "items left" counter
+  (the counter is only recomputed when a todo is added).
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Todo Fixture</title>
+  <style>
+    body { font: 18px/1.5 system-ui, sans-serif; background: #f5f5f5; margin: 0; }
+    main { max-width: 520px; margin: 60px auto; background: #fff; padding: 28px; border-radius: 12px; box-shadow: 0 2px 12px #0002; }
+    h1 { margin: 0 0 16px; font-size: 28px; }
+    form { display: flex; gap: 8px; }
+    input[type=text] { flex: 1; font-size: 18px; padding: 8px 10px; }
+    button { font-size: 18px; padding: 8px 16px; cursor: pointer; }
+    ul { list-style: none; padding: 0; margin: 20px 0; }
+    li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #eee; }
+    li.done span { text-decoration: line-through; color: #999; }
+    input[type=checkbox] { width: 22px; height: 22px; }
+    #counter { font-weight: 600; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>My Todos</h1>
+    <form id="add-form">
+      <input id="new-todo" type="text" placeholder="What needs to be done?" aria-label="New todo" />
+      <button type="submit">Add</button>
+    </form>
+    <ul id="list" aria-label="Todo list"></ul>
+    <p id="counter" role="status">0 items left</p>
+  </main>
+  <script>
+    const todos = [];
+    const list = document.getElementById('list');
+    const counter = document.getElementById('counter');
+
+    function updateCounter() {
+      const left = todos.filter((t) => !t.done).length;
+      counter.textContent = `${left} ${left === 1 ? 'item' : 'items'} left`;
+    }
+
+    function render() {
+      list.innerHTML = '';
+      todos.forEach((todo) => {
+        const li = document.createElement('li');
+        li.className = todo.done ? 'done' : '';
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.checked = todo.done;
+        box.setAttribute('aria-label', `Mark "${todo.text}" as done`);
+        box.addEventListener('change', () => {
+          todo.done = box.checked;
+          li.className = todo.done ? 'done' : '';
+          // BUG (seeded): updateCounter() is not called here.
+        });
+        const span = document.createElement('span');
+        span.textContent = todo.text;
+        li.append(box, span);
+        list.append(li);
+      });
+    }
+
+    document.getElementById('add-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = document.getElementById('new-todo');
+      const text = input.value.trim();
+      if (!text) return;
+      todos.push({ text, done: false });
+      input.value = '';
+      render();
+      updateCounter();
+    });
+  </script>
+</body>
+</html>
