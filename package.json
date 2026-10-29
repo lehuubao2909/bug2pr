@@ -14,7 +14,8 @@
     "smoke:computer-use": "tsx scripts/smoke/smoke-computer-use.ts",
     "smoke:sam": "tsx scripts/smoke/smoke-sam-video-segmentation.ts",
     "eval:record": "tsx scripts/record-eval-bug-videos.ts",
-    "eval:gold": "playwright test -c playwright.eval.config.ts"
+    "eval:gold": "playwright test -c playwright.eval.config.ts",
+    "eval:extract": "tsx scripts/eval-extraction.ts"
   },
   "dependencies": {
     "@meta-sam/parser": "^0.1.0",
