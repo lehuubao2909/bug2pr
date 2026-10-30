@@ -1,0 +1,25 @@
+From 2ecf80eeff66bcd96c4f48c11ac42cb5e45999d9 Mon Sep 17 00:00:00 2001
+From: lhb1810 <lehuubao2909@gmail.com>
+Date: Thu, 29 Oct 2026 11:20:47 +0700
+Subject: [PATCH] seed bug: task search ignores task ID
+
+---
+ src/features/tasks/components/tasks-table.tsx | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/features/tasks/components/tasks-table.tsx b/src/features/tasks/components/tasks-table.tsx
+index 1383a50..86b9c0a 100644
+--- a/src/features/tasks/components/tasks-table.tsx
++++ b/src/features/tasks/components/tasks-table.tsx
+@@ -86,7 +86,7 @@ export function TasksTable({ data }: DataTableProps) {
+       const title = String(row.getValue('title')).toLowerCase()
+       const searchValue = String(filterValue).toLowerCase()
+ 
+-      return id.includes(searchValue) || title.includes(searchValue)
++      return title.includes(searchValue)
+     },
+     getCoreRowModel: getCoreRowModel(),
+     getFilteredRowModel: getFilteredRowModel(),
+-- 
+2.51.0
+

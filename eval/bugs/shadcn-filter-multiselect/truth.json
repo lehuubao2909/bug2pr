@@ -1,5 +1,6 @@
 {
   "id": "shadcn-filter-multiselect",
+  "title": "Status filter drops the first selected option",
   "app": "shadcn-admin",
   "branch": "bug/filter-multiselect-replaces",
   "url": "http://localhost:5173/tasks",

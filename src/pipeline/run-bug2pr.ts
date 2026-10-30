@@ -17,6 +17,8 @@ import type { Repro } from './repro-steps-schema.js';
 import { reproduceBugToFailingTest } from './reproduce-bug-to-failing-test.js';
 import type { SpecOutcome } from './run-repro-spec.js';
 
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
 export type StageId = 'understand' | 'replay' | 'test' | 'fix' | 'pr';
 export type Bug2PrEvent =
   | { type: 'stage'; stage: StageId; status: 'running' | 'done' | 'failed' | 'escalated'; detail?: string }
@@ -39,7 +41,7 @@ export async function runBug2Pr(bugId: string, video: string, app: TargetApp, em
   const extraction = await extractReproSteps(video, 'grounded');
   emit({ type: 'interactions', items: extraction.interactions.map((i) => ({ start: timestamp(i.start), end: timestamp(i.end), x: Math.round(i.x), y: Math.round(i.y) })) });
   emit({ type: 'steps', repro: extraction.repro });
-  emit({ type: 'stage', stage: 'understand', status: 'done', detail: `${extraction.repro.steps.length} steps, ${extraction.interactions.length} cursor interactions (${extraction.cursorFrames} frames tracked)` });
+  emit({ type: 'stage', stage: 'understand', status: 'done', detail: `${plural(extraction.repro.steps.length, 'step')}, ${plural(extraction.interactions.length, 'cursor interaction')} (${extraction.cursorFrames} frames tracked)` });
 
   // 2-3. Replay with computer use, then gate a failing test.
   emit({ type: 'stage', stage: 'replay', status: 'running' });

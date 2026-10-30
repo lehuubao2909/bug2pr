@@ -1,0 +1,38 @@
+{
+  "repro": {
+    "steps": [
+      {
+        "t": "00:04",
+        "action": "click",
+        "target": "Filter by title or ID...",
+        "interaction": 0
+      },
+      {
+        "t": "00:04",
+        "action": "type",
+        "target": "Filter by title or ID...",
+        "value": "TASK-7141",
+        "interaction": 0
+      }
+    ],
+    "expected": "Filtering by TASK-7141 should show the matching TASK-7141 row that was visible on Page 1 before filtering",
+    "actual": "Filter shows 'TASK-7141' but table shows 'No results.' and 'Page 1 of 0'",
+    "confidence": 0.95
+  },
+  "samInteractions": [
+    {
+      "start": 4.066666666666666,
+      "end": 7.733333333333333,
+      "x": 409,
+      "y": 190,
+      "change": 0.05810546875
+    }
+  ],
+  "judge": {
+    "stepsMatched": 2,
+    "stepsTotal": 2,
+    "extraSteps": 0,
+    "diagnosisCorrect": true,
+    "notes": "Both filter steps matched and diagnosis correctly describes the missing TASK-7141 row."
+  }
+}

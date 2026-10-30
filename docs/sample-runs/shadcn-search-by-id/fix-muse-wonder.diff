@@ -1,0 +1,13 @@
+diff --git a/src/features/tasks/components/tasks-table.tsx b/src/features/tasks/components/tasks-table.tsx
+index 86b9c0a..1383a50 100644
+--- a/src/features/tasks/components/tasks-table.tsx
++++ b/src/features/tasks/components/tasks-table.tsx
+@@ -86,7 +86,7 @@ export function TasksTable({ data }: DataTableProps) {
+       const title = String(row.getValue('title')).toLowerCase()
+       const searchValue = String(filterValue).toLowerCase()
+ 
+-      return title.includes(searchValue)
++      return id.includes(searchValue) || title.includes(searchValue)
+     },
+     getCoreRowModel: getCoreRowModel(),
+     getFilteredRowModel: getFilteredRowModel(),

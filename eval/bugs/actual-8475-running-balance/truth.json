@@ -1,5 +1,6 @@
 {
   "id": "actual-8475-running-balance",
+  "title": "Running balance doesn’t update after editing a transaction",
   "app": "actual",
   "branch": "bug/8475-running-balance",
   "url": "http://localhost:3002/",

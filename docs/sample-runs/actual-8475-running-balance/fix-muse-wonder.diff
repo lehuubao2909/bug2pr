@@ -1,0 +1,58 @@
+diff --git a/packages/desktop-client/src/components/accounts/Account.tsx b/packages/desktop-client/src/components/accounts/Account.tsx
+index eab85d55..0c5b5b5f 100644
+--- a/packages/desktop-client/src/components/accounts/Account.tsx
++++ b/packages/desktop-client/src/components/accounts/Account.tsx
+@@ -489,6 +489,44 @@ class AccountInternal extends PureComponent<
+         if (this._isOptimisticUpdate) {
+           this._isOptimisticUpdate = false;
+           const transactionsSnapshot = data;
++          // A local edit may never trigger a full DB-driven onData, so
++          // running balances cannot be left for a later refresh: adjust
++          // them locally. A changed amount shifts the balance of the
++          // edited row and every newer row by the same delta, while
++          // older rows are unaffected. Split children are skipped
++          // because their parent already carries the total.
++          let balances = this.state.balances;
++          if (this.state.showBalances && balances) {
++            const previousById = new Map(
++              this.state.transactions.map(t => [t.id, t]),
++            );
++            const deltaById = new Map<string, number>();
++            for (const t of transactionsSnapshot) {
++              const prev = previousById.get(t.id);
++              if (
++                !t.is_child &&
++                prev &&
++                prev.amount != null &&
++                t.amount != null &&
++                t.amount !== prev.amount
++              ) {
++                deltaById.set(t.id, t.amount - prev.amount);
++              }
++            }
++            if (deltaById.size > 0) {
++              const nextBalances = { ...balances };
++              let cumulativeDelta = 0;
++              for (let i = transactionsSnapshot.length - 1; i >= 0; i--) {
++                const t = transactionsSnapshot[i];
++                cumulativeDelta += deltaById.get(t.id) ?? 0;
++                if (cumulativeDelta !== 0 && nextBalances[t.id] != null) {
++                  nextBalances[t.id] = (nextBalances[t.id] +
++                    cumulativeDelta) as IntegerAmount;
++                }
++              }
++              balances = nextBalances;
++            }
++          }
+           // Wrap in startTransition so React treats this as a low-priority
+           // update. Without this, setState blocks the main thread for the
+           // full duration of the re-render (~40–220ms with large transaction
+@@ -497,7 +535,7 @@ class AccountInternal extends PureComponent<
+           // into chunks and yield to the browser between them, keeping the
+           // UI responsive while the row update happens in the background.
+           startTransition(() => {
+-            this.setState({ transactions: transactionsSnapshot });
++            this.setState({ transactions: transactionsSnapshot, balances });
+           });
+           return;
+         }

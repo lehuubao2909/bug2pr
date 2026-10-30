@@ -1,0 +1,64 @@
+{
+  "repro": {
+    "steps": [
+      {
+        "t": "00:01",
+        "action": "click",
+        "target": "three-dots menu button (more options)",
+        "interaction": 0
+      },
+      {
+        "t": "00:03",
+        "action": "click",
+        "target": "Show running balance",
+        "interaction": 1
+      },
+      {
+        "t": "00:05",
+        "action": "click",
+        "target": "3.29",
+        "interaction": 2
+      },
+      {
+        "t": "00:06",
+        "action": "type",
+        "target": "3.29",
+        "value": "50.00",
+        "interaction": 2
+      }
+    ],
+    "expected": "Editing the Movies Gift payment from 3.29 to 50.00 should recalculate the running Balance column for that row and subsequent rows to reflect the new account total of 3,867.24",
+    "actual": "Account totals updated (Bank of America 3,913.95 to 3,867.24, All accounts 86,295.29 to 86,248.58) but Balance column stayed stale: edited row shows 50.00 with Balance 2,095.34, top rows still 1,753.95, 3,653.95, 3,773.95, 3,913.95, and following rows still 2,098.63, 2,104.98",
+    "confidence": 0.9
+  },
+  "samInteractions": [
+    {
+      "start": 0.5333333333333333,
+      "end": 1.8,
+      "x": 1259,
+      "y": 122,
+      "change": 0.00938671875
+    },
+    {
+      "start": 2.2666666666666666,
+      "end": 3.6,
+      "x": 1134,
+      "y": 157,
+      "change": 0.0773125
+    },
+    {
+      "start": 4.066666666666666,
+      "end": 7.7,
+      "x": 995,
+      "y": 567,
+      "change": 0.00225
+    }
+  ],
+  "judge": {
+    "stepsMatched": 4,
+    "stepsTotal": 5,
+    "extraSteps": 0,
+    "diagnosisCorrect": true,
+    "notes": "First four actions match semantically but the final Tab keypress is missing while the stale Balance diagnosis is correct."
+  }
+}

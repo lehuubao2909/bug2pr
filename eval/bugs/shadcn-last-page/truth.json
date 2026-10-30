@@ -1,5 +1,6 @@
 {
   "id": "shadcn-last-page",
+  "title": "“Last page” button stops one page early",
   "app": "shadcn-admin",
   "branch": "bug/last-page-off-by-one",
   "url": "http://localhost:5173/tasks",

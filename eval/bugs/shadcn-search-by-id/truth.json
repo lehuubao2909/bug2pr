@@ -1,5 +1,6 @@
 {
   "id": "shadcn-search-by-id",
+  "title": "Searching tasks by ID shows “No results”",
   "app": "shadcn-admin",
   "branch": "bug/search-by-id-ignored",
   "url": "http://localhost:5173/tasks",

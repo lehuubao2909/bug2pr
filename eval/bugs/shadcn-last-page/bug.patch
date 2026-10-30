@@ -1,0 +1,25 @@
+From 4963fce9615c31a7d757c42c5d0061a3aefdca50 Mon Sep 17 00:00:00 2001
+From: lhb1810 <lehuubao2909@gmail.com>
+Date: Thu, 29 Oct 2026 11:20:47 +0700
+Subject: [PATCH] seed bug: last-page button goes to second-to-last page
+
+---
+ src/components/data-table/pagination.tsx | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/components/data-table/pagination.tsx b/src/components/data-table/pagination.tsx
+index 5e5991b..ef13b51 100644
+--- a/src/components/data-table/pagination.tsx
++++ b/src/components/data-table/pagination.tsx
+@@ -117,7 +117,7 @@ export function DataTablePagination<TData>({
+           <Button
+             variant='outline'
+             className='size-8 p-0 @max-md/content:hidden'
+-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
++            onClick={() => table.setPageIndex(table.getPageCount() - 2)}
+             disabled={!table.getCanNextPage()}
+           >
+             <span className='sr-only'>Go to last page</span>
+-- 
+2.51.0
+

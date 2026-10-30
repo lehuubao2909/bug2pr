@@ -1,0 +1,24 @@
+From 58616c82df50bfa66419652ffbfd9dc7efffa038 Mon Sep 17 00:00:00 2001
+From: lhb1810 <lehuubao2909@gmail.com>
+Date: Thu, 29 Oct 2026 11:20:47 +0700
+Subject: [PATCH] seed bug: faceted filter drops previously selected options
+
+---
+ src/components/data-table/faceted-filter.tsx | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/components/data-table/faceted-filter.tsx b/src/components/data-table/faceted-filter.tsx
+index 6923a11..769004e 100644
+--- a/src/components/data-table/faceted-filter.tsx
++++ b/src/components/data-table/faceted-filter.tsx
+@@ -94,6 +94,7 @@ export function DataTableFacetedFilter<TData, TValue>({
+                       if (isSelected) {
+                         selectedValues.delete(option.value)
+                       } else {
++                        selectedValues.clear()
+                         selectedValues.add(option.value)
+                       }
+                       const filterValues = Array.from(selectedValues)
+-- 
+2.51.0
+

@@ -9,6 +9,9 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "setup:targets": "bash scripts/setup-target-apps.sh",
+    "target:shadcn": "pnpm --dir ${TARGETS_DIR:-../targets}/shadcn-admin dev --port 5173 --strictPort",
+    "target:actual": "cd ${TARGETS_DIR:-../targets}/actual/packages/desktop-client && PORT=3002 REACT_APP_BACKEND_WORKER_HASH=dev yarn vite --mode=browser",
     "fixture:record": "tsx scripts/record-fixture-bug-video.ts",
     "smoke:video": "tsx scripts/smoke/smoke-video-understanding.ts",
     "smoke:computer-use": "tsx scripts/smoke/smoke-computer-use.ts",
@@ -33,5 +36,6 @@
     "@types/node": "^26.6.5",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
-  }
+  },
+  "license": "MIT"
 }

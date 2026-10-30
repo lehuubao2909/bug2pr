@@ -31,7 +31,7 @@ function prBody(bugId: string, repro: Repro, fix: FixResult, testPath: string, e
   return `## Summary
 ${fix.rootCause}
 
-## Bug (from screen recording \`${evidence.video}\`)
+## Bug (from screen recording \`${path.basename(evidence.video)}\`)
 **Expected:** ${repro.expected}
 **Actual:** ${repro.actual}
 

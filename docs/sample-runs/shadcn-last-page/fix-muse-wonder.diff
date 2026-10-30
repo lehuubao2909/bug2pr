@@ -1,0 +1,13 @@
+diff --git a/src/components/data-table/pagination.tsx b/src/components/data-table/pagination.tsx
+index ef13b51..5e5991b 100644
+--- a/src/components/data-table/pagination.tsx
++++ b/src/components/data-table/pagination.tsx
+@@ -117,7 +117,7 @@ export function DataTablePagination<TData>({
+           <Button
+             variant='outline'
+             className='size-8 p-0 @max-md/content:hidden'
+-            onClick={() => table.setPageIndex(table.getPageCount() - 2)}
++            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+             disabled={!table.getCanNextPage()}
+           >
+             <span className='sr-only'>Go to last page</span>

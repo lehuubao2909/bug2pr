@@ -1,0 +1,50 @@
+diff --git a/packages/desktop-client/src/components/accounts/Account.tsx b/packages/desktop-client/src/components/accounts/Account.tsx
+index eab85d55..cb7bbfba 100644
+--- a/packages/desktop-client/src/components/accounts/Account.tsx
++++ b/packages/desktop-client/src/components/accounts/Account.tsx
+@@ -497,7 +497,44 @@ class AccountInternal extends PureComponent<
+           // into chunks and yield to the browser between them, keeping the
+           // UI responsive while the row update happens in the background.
+           startTransition(() => {
+-            this.setState({ transactions: transactionsSnapshot });
++            this.setState(state => {
++              let newBalances = state.balances;
++              if (newBalances) {
++                const prevById = new Map(
++                  state.transactions.map(t => [t.id, t]),
++                );
++                const deltas: { idx: number; delta: number }[] = [];
++                for (const t of transactionsSnapshot) {
++                  const prev = prevById.get(t.id);
++                  if (prev && prev.amount !== t.amount) {
++                    const idx = transactionsSnapshot.findIndex(
++                      x => x.id === t.id,
++                    );
++                    if (idx !== -1) {
++                      deltas.push({
++                        idx,
++                        delta: (t.amount ?? 0) - (prev.amount ?? 0),
++                      });
++                    }
++                  }
++                }
++                if (deltas.length > 0) {
++                  newBalances = { ...newBalances };
++                  for (const { idx, delta } of deltas) {
++                    for (let i = 0; i <= idx; i++) {
++                      const id = transactionsSnapshot[i].id;
++                      if (newBalances[id] != null) {
++                        newBalances[id] += delta;
++                      }
++                    }
++                  }
++                }
++              }
++              return {
++                transactions: transactionsSnapshot,
++                balances: newBalances,
++              };
++            });
+           });
+           return;
+         }
