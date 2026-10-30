@@ -2,7 +2,7 @@
 
 **Turn a screen recording of a web bug into a reproduced failing test and a verified pull request.**
 
-Bug reports are usually vague ("checkout is broken, see video"), and studies of bug trackers find that roughly 1 in 6 reports is never reproduced. Bug2PR takes any `.mp4` screen recording, works out what the user did, reproduces the bug live in a real browser, writes a regression test that fails because of the bug, fixes the code until that test passes while the repo's own checks stay green, and prepares a pull request for a human to approve.
+Bug reports are usually vague ("checkout is broken, see video"), and someone has to watch the recording, guess the steps and try to reproduce it before any fix can start. Bug2PR takes any `.mp4` screen recording, works out what the user did, reproduces the bug live in a real browser, writes a regression test that fails because of the bug, fixes the code until that test passes while the repo's own checks stay green, and prepares a pull request for a human to approve.
 
 Built for the **Meta Global AI Developer Hackathon** (Oct 26 – Nov 4, 2026), Indie track, theme *Build for Your World*.
 
@@ -80,7 +80,7 @@ What the gates caught during development: in an early version, two generated tes
 Requirements: Node ≥ 20, `pnpm`, `ffmpeg`, `git`, a Meta Model API key ([dev.meta.ai](https://dev.meta.ai)), and optionally a Baseten key for private mode.
 
 ```bash
-git clone <this repo> bug2pr && cd bug2pr
+git clone https://github.com/lhb-goku/bug2pr.git && cd bug2pr
 npm install
 npx playwright install chromium
 cp .env.example .env              # add META_API_KEY (and BASETEN_API_KEY for private mode)

@@ -22,12 +22,16 @@ async function main(): Promise<void> {
   const t0 = Date.now();
   const timeline: { t: number; stage: string; status: string }[] = [];
 
+  // Never start while another run is going: the page would open on its run view.
+  while ((await (await fetch('http://localhost:4100/api/status')).json()).running) await new Promise((r) => setTimeout(r, 2000));
   await page.goto('http://localhost:4100', { waitUntil: 'load' });
   await page.click(`.bug-card[data-bug="${bugId}"]`);
   if (privateMode) await page.check('#private');
   await page.waitForTimeout(1500);
   timeline.push({ t: (Date.now() - t0) / 1000, stage: 'run', status: 'clicked' });
   await page.click('#run');
+  // The page may hold a finished earlier run; wait for this run's `start` event to reset the view.
+  await page.waitForFunction(() => document.body.dataset.view === 'run' && document.getElementById('banner')!.hidden);
 
   // Poll stage classes so we know when each stage started/finished in the recording.
   const seen = new Map<string, string>();
@@ -35,7 +39,7 @@ async function main(): Promise<void> {
   while (Date.now() < deadline) {
     const state = await page.evaluate(() => ({
       stages: [...document.querySelectorAll('.stage')].map((s) => [s.id, s.className] as const),
-      banner: getComputedStyle(document.getElementById('banner')!).display !== 'none' ? document.getElementById('banner')!.textContent : '',
+      banner: document.getElementById('banner')!.hidden ? '' : document.getElementById('banner')!.textContent,
     }));
     for (const [id, cls] of state.stages) {
       if (seen.get(id) !== cls) { seen.set(id, cls); timeline.push({ t: (Date.now() - t0) / 1000, stage: id, status: cls }); }
