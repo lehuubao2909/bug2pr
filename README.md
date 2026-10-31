@@ -80,7 +80,7 @@ What the gates caught during development: in an early version, two generated tes
 Requirements: Node ≥ 20, `pnpm`, `ffmpeg`, `git`, a Meta Model API key ([dev.meta.ai](https://dev.meta.ai)), and optionally a Baseten key for private mode.
 
 ```bash
-git clone https://github.com/lhb-goku/bug2pr.git && cd bug2pr
+git clone https://github.com/lehuubao2909/bug2pr.git && cd bug2pr
 npm install
 npx playwright install chromium
 cp .env.example .env              # add META_API_KEY (and BASETEN_API_KEY for private mode)
