@@ -17,7 +17,7 @@ Built for the **Meta Global AI Developer Hackathon** (Oct 26 – Nov 4, 2026), I
 
 ## For judges: 5-minute tour
 
-1. **Watch the demo video (3 min):** _link added at submission_. Every run in it is real; nothing is mocked.
+1. **Watch the demo video (3 min):** [youtu.be/mkzIdOfx0JE](https://youtu.be/mkzIdOfx0JE). Every run in it is real; nothing is mocked.
 2. **See one complete run without installing anything:** [docs/sample-runs/shadcn-search-by-id/](docs/sample-runs/shadcn-search-by-id/). It holds everything the models produced for one bug video:
    - `repro-steps-from-video.json`: SAM 3.1 cursor interactions and the steps Muse Spark extracted from [the video](eval/bugs/shadcn-search-by-id/video.mp4);
    - `regression-test.spec.ts`: the Playwright test generated from the live computer-use replay. It fails on the bug 3/3 times;
